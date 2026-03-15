@@ -11,7 +11,7 @@ The name is inspired by [`mini-mnist`](https://github.com/konrad-gajdus/miniMNIS
 - `headers/config.h`  
   - Project-wide constants such as dataset paths, layer sizes, epochs, and learning rate.
 - `headers/dataset.h` and `src/dataset.c`  
-  - MNIST dataset loading and memory lifecycle management.
+  - MNIST dataset loading, partial in-place dataset shuffling, and memory lifecycle management.
 - `headers/network.h` and `src/network.c`  
   - Neural network data structures, initialization, training, and cleanup.
 - `headers/types.h`  

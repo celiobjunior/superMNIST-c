@@ -10,6 +10,7 @@
  * Ownership and lifecycle:
  * - initialize with `Dataset dataset = {0};`
  * - load with `dataset_load_mnist(&dataset);`
+ * - shuffle in place with `dataset_shuffle(&dataset, dataset.n_samples);`
  * - release with `dataset_free(&dataset);`
  *
  * Reload behavior:
@@ -57,6 +58,30 @@ typedef struct Dataset {
  * @param dataset Dataset object to initialize or reload.
  */
 void dataset_load_mnist(Dataset *dataset);
+
+/**
+ * @brief Randomly shuffles a prefix of loaded dataset samples in place.
+ *
+ * Images and labels remain aligned after shuffling, so each label continues to
+ * describe the image stored at the same sample index.
+ *
+ * The shuffle is applied to the half-open range `[0, end_index)`.
+ * This allows the training split to be reshuffled while keeping the test split
+ * fixed across epochs.
+ *
+ * Range handling:
+ * - if `end_index > dataset->n_samples`, it is clamped to `dataset->n_samples`
+ * - if `end_index < 2`, the function does nothing
+ *
+ * Safe no-op behavior:
+ * - if `dataset` is NULL
+ * - if the dataset is not fully loaded
+ * - if the dataset contains fewer than two total samples
+ *
+ * @param dataset Dataset object to shuffle.
+ * @param end_index Exclusive end of the prefix range to shuffle.
+ */
+void dataset_shuffle(Dataset *dataset, size_t end_index);
 
 /**
  * @brief Releases all memory owned by a dataset and resets it to zero.

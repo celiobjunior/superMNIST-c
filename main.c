@@ -17,17 +17,17 @@ int main(void)
         double cpu_time_used;
         srand(time(NULL));
 
-        network_init(&net, MNIST_IMAGE_SIDE * MNIST_IMAGE_SIDE);
-
         dataset_load_mnist(&dataset);
 
         if (dataset.pixels_per_image != MNIST_IMAGE_SIDE * MNIST_IMAGE_SIDE)
         {
                 printf("Unexpected image dimensions.\n");
-                network_free(&net);
                 dataset_free(&dataset);
                 return 1;
         }
+
+        dataset_shuffle(&dataset, dataset.n_samples);
+        network_init(&net, dataset.pixels_per_image);
 
         size_t train_samples = (size_t) (dataset.n_samples * TRAIN_SPLIT);
         size_t test_samples = dataset.n_samples - train_samples;
@@ -35,6 +35,7 @@ int main(void)
         for (i32 epoch = 0; epoch < EPOCHS; epoch++)
         {
                 start = clock();
+                dataset_shuffle(&dataset, train_samples);
                 for (size_t i = 0; i < train_samples; i++)
                 {
                         for (size_t j = 0; j < dataset.pixels_per_image; j++)

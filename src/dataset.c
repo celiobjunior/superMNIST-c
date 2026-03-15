@@ -214,6 +214,38 @@ static void dataset_load_mnist_labels(const char *filename,
         printf("MNIST labels completely loaded...\n\n");
 }
 
+static void dataset_swap_labels(u8 *labels, size_t i, size_t j)
+{
+        u8 swap;
+
+        if (i == j) return;
+
+        swap = labels[i];
+        labels[i] = labels[j];
+        labels[j] = swap;
+}
+
+static void dataset_swap_image_samples(u8 *images,
+                                       size_t pixels_per_image,
+                                       size_t i,
+                                       size_t j)
+{
+        size_t base_i, base_j;
+        u8 swap;
+        
+        if (i == j) return;
+
+        base_i = i * pixels_per_image;
+        base_j = j * pixels_per_image;
+
+        for (size_t k = 0; k < pixels_per_image; k++)
+        {
+                swap = images[base_i + k];
+                images[base_i + k] = images[base_j + k];
+                images[base_j + k] = swap;
+        }
+}
+
 void dataset_load_mnist(Dataset *dataset)
 {
         size_t n_images;
@@ -241,6 +273,52 @@ void dataset_load_mnist(Dataset *dataset)
         }
 
         dataset->n_samples = n_images;
+}
+
+/**
+ * @brief Randomly shuffles a prefix of the loaded dataset in place.
+ *
+ * This function applies an in-place Fisher-Yates shuffle to the sample range
+ * `[0, end_index)`. Images and labels remain aligned after shuffling, so each
+ * label continues to describe the image stored at the same sample index.
+ *
+ * Range behavior:
+ * - if `end_index > dataset->n_samples`, it is clamped to `dataset->n_samples`
+ * - if `end_index < 2`, no shuffle is performed
+ * - samples in the range `[end_index, dataset->n_samples)` are left unchanged
+ *
+ * Safe no-op behavior:
+ * - if `dataset` is NULL
+ * - if the dataset is not fully loaded
+ * - if the dataset contains fewer than two total samples
+ *
+ * @param dataset Dataset object to shuffle.
+ * @param end_index Exclusive upper bound of the sample prefix to shuffle.
+ */
+void dataset_shuffle(Dataset *dataset, size_t end_index)
+{
+        if (!dataset ||
+            !dataset->images ||
+            !dataset->labels ||
+            dataset->pixels_per_image == 0 ||
+            dataset->n_samples < 2)
+                return;
+        
+        if (end_index > dataset->n_samples)
+                end_index = dataset->n_samples;
+        
+        if (end_index < 2) return;
+        
+        for (size_t i = end_index - 1; i > 0; i--)
+        {
+                size_t j = (size_t) rand() % (i + 1);
+
+                dataset_swap_image_samples(dataset->images,
+                                           dataset->pixels_per_image,
+                                           i,
+                                           j);
+                dataset_swap_labels(dataset->labels, i, j);
+        }
 }
 
 void dataset_free(Dataset *dataset)
