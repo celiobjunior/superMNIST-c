@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef struct NetworkGradient {
+        f32 *bias_grad;
+        f32 *weight_grad;
+} NetworkGradient;
+
 static f32 sigmoid(f32 z)
 {
         return 1.0f / (1.0f + expf(-z));
@@ -26,8 +31,8 @@ static void feed_forward(const Layer *layer, const f32 *input, f32 *output)
 
 static void backprop(Network *net,
                      const f32 *input,
-                     Gradient *grad_output,
-                     Gradient *grad_hidden,
+                     NetworkGradient *grad_output,
+                     NetworkGradient *grad_hidden,
                      u8 label)
 {
         f32 hidden_output[HIDDEN_LAYER_SIZE];
@@ -80,7 +85,7 @@ static void layer_free(Layer *layer)
         layer->output_count = 0;
 }
 
-static void gradient_free(Gradient *grad)
+static void gradient_free(NetworkGradient *grad)
 {
         if (!grad) return;
 
@@ -117,8 +122,10 @@ static void layer_init(Layer *layer, size_t input_count, size_t output_count)
                 layer->weights[i] = ((f32) rand() / RAND_MAX - 0.5f) * 2.0f * scale;
 }
 
-static void gradient_init(Gradient *grad, size_t bias_count, size_t weight_count)
+static void gradient_init(NetworkGradient *grad, size_t bias_count, size_t weight_count)
 {
+        if (!grad) return;
+
         grad->bias_grad = (f32 *) calloc(bias_count, sizeof(f32));
         grad->weight_grad = (f32 *) calloc(weight_count, sizeof(f32));
 
@@ -132,8 +139,8 @@ static void gradient_init(Gradient *grad, size_t bias_count, size_t weight_count
 
 void network_train(Network *net, const f32 *input, const u8 *label, size_t batch_size, f32 learning_rate)
 {
-        Gradient grad_output, grad_hidden;
-        Gradient sample_grad_output, sample_grad_hidden;
+        NetworkGradient grad_output, grad_hidden;
+        NetworkGradient sample_grad_output, sample_grad_hidden;
         f32 batch_scale;
 
         if (!net || !input || !label || batch_size == 0) return;
@@ -230,6 +237,7 @@ b32 network_predict(Network *net, const f32 *input, u8 correct_label)
 
         u8 predicted_label = 0;
         f32 max_output = final_output[0];
+
         for (size_t i = 1; i < OUTPUT_LAYER_SIZE; i++)
         {
                 if (final_output[i] > max_output)

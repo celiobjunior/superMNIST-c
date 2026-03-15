@@ -4,11 +4,6 @@
 #include "types.h"
 #include <stddef.h>
 
-typedef struct Gradient {
-        f32 *bias_grad;
-        f32 *weight_grad;
-} Gradient;
-
 /**
  * @brief Fixed-size fully connected layer.
  *
@@ -49,7 +44,7 @@ typedef struct Network {
 /**
  * @brief Allocates and initializes the fixed network layers.
  *
- * If `net` already owns layer buffers, they are released before the new
+ * If `net` already owns buffers, they are released before the new
  * initialization is performed.
  *
  * @param net Network instance to initialize. It should be zero-initialized
@@ -60,6 +55,9 @@ void network_init(Network *net, size_t input_size);
 
 /**
  * @brief Performs one training step for a mini-batch of labeled samples.
+ *
+ * This function temporarily allocates a gradient workspace to accumulate
+ * batch gradients and per-sample gradients during the training step.
  *
  * @param net Initialized network instance.
  * @param input Normalized mini-batch input buffer.
@@ -72,20 +70,21 @@ void network_train(Network *net, const f32 *input, const u8 *label, size_t batch
 /**
  * @brief Releases all heap memory owned by the network.
  *
- * Safe to call with a non-NULL pointer whose layers were previously
- * initialized. After this call, the network should not be trained again
- * unless it is reinitialized.
+ * Safe to call with a non-NULL pointer whose layers were
+ * previously initialized. After this call, the network should not be trained
+ * again unless it is reinitialized.
  *
  * @param net Network instance to release.
  */
 void network_free(Network *net);
 
 /**
- * @brief Makes a prediction for a given input sample.
+ * @brief Checks whether the predicted label matches the expected label.
  *
  * @param net Initialized network instance.
  * @param input Normalized input sample with `input_size` elements.
- * @return Predicted class label.
+ * @param correct_label Expected class label for the sample.
+ * @return Non-zero if the prediction matches `correct_label`, otherwise zero.
  */
 b32 network_predict(Network *net, const f32 *input, u8 correct_label);
 
